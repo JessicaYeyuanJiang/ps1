@@ -1,0 +1,545 @@
+---
+title: "ps1"
+author: "Jessica Jiang"
+date: "1/6/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# 1 R for Data Science Exercises
+## 1.1 Intro
+1. Who did you work with?
+Pedro Liedo
+
+##1.2 3.6.1
+#####1. What geom would you use to draw a line chart? A boxplot? A histogram? An area chart?
+
+**line geom**: geom_line() 
+
+**boxplot geom**: geom_boxplot() 
+
+**histgram geom**: geom_histogram() 
+
+**area chart**: geom_area() 
+
+#####2.What does show.legend = FALSE do? What happens if you remove it? Why do you think I used it earlier in the chapter?
+
+It tells r not to show the legend right next to the chart. Without it, there would be one or multiple legends shown. **You used it because we can have more space for the chart this way.**
+
+#####3.What does the se argument to geom_smooth() do?
+It's the short of standard error. If se = T, the confidence interval would be displayed around the fitted line.
+
+#####4. Will these two graphs look different? Why/why not?
+```{r}
+ggplot(data = mpg, mapping = aes(x = displ, y = hwy)) +
+geom_point() +
+geom_smooth()
+
+ggplot() +
+geom_point(data = mpg, mapping = aes(x = displ, y = hwy)) +
+geom_smooth(data = mpg, mapping = aes(x = displ, y = hwy))
+```
+They will look the same. Because two layers use the same data, coordinate system, by only typing the data and the set of mappings to ggplot(), this mapping is treated as a global mapping that apply to all geoms in the grap. It produces the same plot as the code where we specify the data and mappings in both geoms.
+
+##1.2.1 3.7.1
+1. What is the default geom associated with stat_summary()? How could you rewrite the previous plot to use that geom function instead of the stat function?
+
+default geom: geom_pointrange()
+
+```{r}
+ggplot(data = diamonds,aes(x = cut, y = depth)) +
+  geom_pointrange(stat = "summary",
+                  fun.ymin = min,
+                  fun.ymax = max,
+                  fun.y = median
+                  )
+```
+
+2. What does geom_col() do? How is it different to geom_b
+
+geom_col and geom_b are two types of bar charts: with geom_col, the hight of the bar represent the values of another variable in the data, whereas with geom_bar, the hight of the bar represent the counting of number of cases at each x position.
+
+```{r}
+?geom_col() 
+?geom_bar()
+```
+
+3. Most geoms and stats come in pairs that are almost always used in concert. Read through the documentation and make a list of all the pairs. What do they have in common?
+
+```{r}
+pairs <- c("geom_bar - count", "geom_bin2d - bin2d", "geom_blank - identity", "geom_boxplot - boxplot","geom_contour - contour", "geom_contour - contour", "geom_count - sum", "geom_density - density", "geom_density_2d - density2d","geom_errorbarh - identity", "geom_hex - binhex", "geom_freqpoly - bin", "geom_jitter- identity", "geom_crossbar - identity", "geom_map - identity", "geom_path - identity", "geom_point - identity", "geom_polygon - identity", "geom_qq - stats::qnorm (NA)", "geom_quantile - quantile", "geom_ribbon - identity", "geom_rug - identity", "geom_segment - identity", "geom_smooth - smooth", "geom_spoke -  identity", "geom_label - identity", "geom_raster - identity", "geom_violin - ydensity")
+
+pairs
+```
+
+4. What variables does stat_smooth() compute? What parameters control its behaviour?
+-It aids the eye in seeing patterns in the presence of overplotting.
+-position, method, formula, se, n which is number of points, span, fullrange, level, method.args, na.rm, show.legend and inherit.aes
+
+```{r}
+?stat_smooth()
+```
+
+5. In our proportion bar chart, we need to set group = 1. Why? In other words what is the problem with these two graphs?
+
+When we are plotting y as the proportion for a barchart, if we don't set group = 1, each bin will be treated as a seperate group and as a result, ..prop.. would give the proportion of each group value 1. By setting group = 1, ..prop.. gives the proportions of the group in the whole data. However, for the second plot, since y is proportion, when we are mapping variable color to fill, it will not be achieved since 
+
+The right way should be:
+```{r}
+ggplot(data = diamonds) +
+geom_bar(mapping = aes(x = cut, y = ..prop.., group = 1))
+
+ggplot(data = diamonds) +
+geom_bar(mapping = aes(x = cut, fill = color, y = ..prop.., group =1))
+```
+
+
+##1.3 3.8.1
+1. What is the problem with this plot? How could you improve it?
+
+The data has 234 observations; the scatter, however, only shows around 80 observations. This is because some data points overlap with other. By adding geom_jitter(), we add some noise to each data point and this way all observations show in the scatter plot.
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+  geom_point() +
+  geom_jitter()
+```
+
+2. What parameters to geom_jitter() control the amount of jittering?
+```{r}
+?geom_jitter
+```
+width and height
+
+3. Compare and contrast geom_jitter() with geom_count().
+
+Both help with overplotting. geom_count counts overlapping points at each location and then maps the count to the point area. geom_jitter adds small amount of noise to the location of each data point. 
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+  geom_point() +
+  geom_count() 
+```
+
+4. What’s the default position adjustment for geom_boxplot()? Create a visualisation of the mpg dataset that demonstrates it.
+
+the default position adjustment is position = "dodge". If we add position='dodge' in geom_boxplot(), they look exactly the same.
+
+```{r}
+?geom_boxplot
+
+ggplot(mpg, aes(x=drv, y=hwy, fill=as.factor(cyl))) +
+  geom_boxplot()
+
+ggplot(mpg, aes(x = drv, y = hwy, fill=as.factor(cyl))) +
+  geom_boxplot(position='dodge')
+
+ggplot(mpg, aes(x = drv, y = hwy, fill=as.factor(cyl))) +
+  geom_boxplot(position='jitter')
+```
+
+##1.4 3.9.1
+1. Turn a stacked bar chart into a pie chart using coord_polar().
+
+```{r}
+
+ggplot(mpg, aes(x=sum(cyl), fill=as.factor(cyl))) +
+  geom_bar(width = 1)
+
+ggplot(mpg, aes(x=sum(cyl), fill=as.factor(cyl))) +
+  geom_bar(width = 1) +
+  coord_polar(theta = 'y')
+``` 
+
+2. What does labs() do? Read the documentation
+```{r}
+?labs()
+```
+It modifies axis, legend, and plot labels, title and subtitle to the plot.
+
+3. What’s the difference between coord_quickmap() and coord_map()?
+coord_quickmap uses an approximation to the mercator projection, whereas coord_map can use a variety of projections from the mapproj package.
+
+coord_map uses any projection defined by the mapproj package, whereas coord_quickmap uses a quick approximation to the mercator projection. coord_quickmap is faster and does not require any additional pack but it only works for smaller areas closer to the equater and is less accurate.
+
+```{r}
+?coord_quickmap()
+?coord_map()
+```
+
+4. What does the plot below tell you about the relationship between city and highway mpg? Why is coord_fixed() important? What does geom_abline() do? 
+
+cty and hwy are positively correlated, and there's approximately a linear relationship between them. However, highway milage is better than city millage. coord_fixed() gives same interval of x- and y- axis and it gives a constant offset and makes it easier for us to compare the relationship between x and y. geom_abline() adds a diagonal reference line to the plot. The default setting of slope is 1 and intercept 0. It adds a line that passes the origin with slope 1.  
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = cty, y = hwy)) +
+geom_point() +
+geom_abline() +
+coord_fixed()
+
+?geom_abline()
+```
+
+##1.5 4.4
+
+1. Why does this code not work?
+
+Because r is very sensitive about typo and case, after we give value 10 to the object my_variable, when we want to inspect the object, we need to be completely precise in the instructions. The right code should be:
+```{r}
+my_variable <- 10
+my_variable
+```
+
+2. Tweak each of the following R commands so that they run correctly:
+The right code should be:
+
+```{r}
+library(tidyverse)
+
+ggplot(data = mpg) + #chage dota into data
+geom_point(mapping = aes(x = displ, y = hwy))
+
+filter(mpg, cyl == 8) #change fliter to filter. Instead of naming cyl or giving value of cyl, we want expressions to filter the data set by testing for equality. In order to do so, we use == instead of =. 
+
+filter(diamonds, carat > 3) #name of data set is diamonds instead of diamond
+```
+
+3.Press Alt + Shift + K. What happens? How can you get to the same place using the menus? (Alt is Option on Mac)
+
+It gives us the Keyboards Shortcut Quick Reference, which is a sequence of keystrokes on keyboards. By cliking on the Tools or Help on the menu bar, we can find and open Keyboards Shortcut Help, and it would give the same thing.
+
+
+##1.6 5.2.4
+library(nycflights13)
+library(tidyverse)
+1. Using the nycflights13 library, find all flights that
+
+```{r}
+library("nycflights13")
+library(tidyverse)
+```
+
+```{r}
+airlines
+filter(flights, arr_delay >= 120)
+filter(flights, dest %in% c("IAH","HOU")) 
+filter(flights, carrier %in% c("UA","AA","DL")) 
+filter(flights, month %in% 7:9) 
+filter(flights, arr_delay > 120, dep_delay <= 0)
+filter(flights, dep_delay >= 60, dep_delay <= 0)
+filter(flights, dep_delay >= 60, (dep_delay-arr_delay)> 60)
+filter(flights, dep_delay >= 60, (dep_delay-arr_delay)> 60)
+filter(flights, dep_time >= 2400 , dep_time <= 600)
+```
+
+2. Another useful dplyr filtering helper is between(). What does it do? Can you use it to simplify the code needed to answer the previous challenges?
+
+It tests if valeus in a numeric vector fall in specified range.
+```{r}
+?between()
+filter(flights,between(dep_time,2359,601))
+```
+
+3. How many flights have a missing dep_time? What other variables are missing? What might these rows represent?
+8255 flights have a missing dep_time. dep_delay, arr_time, arr_delay, tailnum, and air_time have missings. They might represent some flights that have been canceled and some flights that we failed to record the data of.
+
+```{r}
+dep_time_na <- filter(flights,is.na(dep_time))
+nrow(dep_time_na)
+
+map_dbl(flights, ~sum(is.na(.x)))
+?map_dbl
+```
+
+4. Why is NA ˆ 0 not missing? Why is NA | TRUE not missing? Why is FALSE & NA not missing? Can you figure out the general rule? (NA * 0 is a tricky counterexample!)
+
+NA^0 returns 1, because anthing to the power of 0 is 1.
+NA | TRUE returns TRUE because the second part is true and R is testing either of them is TRUE
+FALSE & NA returns FALSE because r is testing if both are True, if one can be tested and because the first part is False, it returns False as its value
+
+```{r}
+NA^0
+NA | TRUE
+FALSE & NA
+```
+
+##1.7 5.3.1
+1. How could you use arrange() to sort all missing values to the start? (Hint: use is.na()).
+
+```{r}
+flights %>%
+arrange(!is.na(flights$tailnum), flights$tailnum)
+```
+
+2. Sort flights to find the most delayed flights by arrival time.
+```{r}
+arrange(flights, arr_time, desc(dep_delay))
+#or
+arrange(arrange(flights, desc(dep_delay)),arr_time)
+```
+
+
+3. Find the flights that left earliest relative to their scheduled departure.
+
+I printed the first 10 flights that left earliest relative to their scheduled departure.
+
+```{r}
+print(head(arrange(flights, dep_delay), 10))
+```
+
+4. Sort flights to find the shortest amount of time actually in the air.
+
+Assume the actually time in the air is air_time, then we have:
+```{r}
+print(head(arrange(flights, air_time), 2))
+```
+## 1.8 5.4.1
+1. Brainstorm as many ways as possible to select dep_time, dep_delay, arr_time, and arr_delay from
+flights.
+```{r}
+names(flights)
+
+select(flights, dep_time, dep_delay, arr_time, arr_delay)
+select(flights, -(year:day),-sched_dep_time, -sched_arr_time, -(carrier:time_hour))
+select(flights, -(year:day),-contains("_dep_time"), -(carrier:time_hour))
+select(flights, contains("_"), -contains("sched"), -air_time, -time_hour)
+```
+
+2. What happens if you include the name of a variable multiple times in a select() call?
+select(flights, dep_time)
+The code would return the same result as if we only include the name of the variable once.
+
+3. What does the one_of() function do? Why might it be helpful in conjunction with this vector?
+vars <- c("year", "month", "day", "dep_delay", "arr_delay")
+It select the data from variables in character vector that includes character names of variables.
+
+4. Does the result of running the following code surprise you? How do the select helpers deal with case by
+default? How can you change that default?
+No it doesn't surprise me. Because the default setting of case is ignore.case = TRUE in select helpers, the command selects variables that contain word "TIME" no matter of upper- or lower- case. In order to select variables that only contain upper-case "TIME", we do:
+```{r, eval=FALSE, echo=T}
+select(flights, contains("TIME",ignore.case = FALSE))
+```
+
+Because the imported data sets have all variables names in lower case, the resulting data set after selection would be empty.
+
+##1.9 5.5.2
+1. Currently dep_time and sched_dep_time are convenient to look at, but hard to compute with because they’re not really continuous numbers. Convert them to a more convenient representation of number of minutes since midnight.
+```{r}
+mutate(flights,
+  dep_hour = dep_time %/% 100,
+  dep_minute = dep_time %% 100,
+  dep_time2 = hour  * 60 + minute,
+  sched_dep_time2 = (sched_dep_time %/% 100) * 60 + (sched_dep_time %% 100)
+)
+```
+
+2. Compare air_time with arr_time - dep_time. What do you expect to see? What do you see? What
+do you need to do to fix it?
+
+```{r}
+ggplot(flights, aes(x=air_time, y=(arr_time - dep_time))) +
+  geom_point()
+
+flights_temp <- transmute(flights,
+  arr_time2 = (arr_time %/% 100) * 60 + (arr_time %% 100),
+  dep_time2 = (dep_time %/% 100) * 60 + (dep_time %% 100),
+  arr_time2-dep_time2,
+  air_time,
+  (arr_time2 - dep_time2) - air_time
+)
+
+flights_temp
+ggplot(flights_temp, aes(x=air_time, y=(arr_time2 - dep_time2))) +
+  geom_point()
+```
+
+3. Implement your fix. Remake the plot from the previous question.
+```{r}
+flights2 <- transmute(flights,
+  arr_time2 = (arr_time %/% 100) * 60 + (arr_time %% 100),
+  dep_time2 = (dep_time %/% 100) * 60 + (dep_time %% 100),
+  arr_time2-dep_time2,
+  air_time,
+  (arr_time2 - dep_time2) - air_time
+)
+ggplot(flights2, aes(x=air_time, y=(arr_time2 - dep_time2))) +
+  geom_point()
+```
+
+4. Suggest and justify with words an error tolerance in minutes, meaning that if air_time is too far off from arr_time - dep_time then we assume one of the columns contains an error. After implementing your fix, what fraction of observations still appear to have an error?
+
+because the difference between arrival time and departure time contain the time of flight in the air, which is the major part of the air_time. If air_time is far from (arr_time - dep_time), one of them might contain errors.
+
+5. Compare dep_time, sched_dep_time, and dep_delay. How would you expect those three numbers to be related?
+dep_delay equals to the difference between dep_time and sched_dep_time
+```{r, eval=FALSE, echo=T}
+select(flights,dep_time, sched_dep_time, dep_delay )
+```
+
+6. Find the 10 most delayed flights using a ranking function. How do you want to handle ties? Carefully read the documentation for min_rank().
+
+I assume that when a flight got delayed, it's delayed at both depature and at arrival. At the same time I took into consideration of the gains during the time in the air. The less gains, the more delayed the flight is considered to be, taking other variables constant. 
+
+The 10 most delayed flights are shown below:
+```{r}
+print((arrange(flights, -dep_delay, -arr_delay, (dep_delay - arr_delay))), 10)
+
+#or
+flights_p <- transmute(flights, dep_delay,arr_delay, gains=(arr_delay - dep_delay))
+arrange(flights_p, -dep_delay, -arr_delay, gains)
+```
+
+7. What does 1:3 + 1:10 return? Why?
+
+It returns that "longer object length is not a multiple of shorter object length". Because "+" is a vecterized function, when we add two object, they should have the same length or one should be a multiple of the other.
+
+```{r}
+1:3 + 1:6
+```
+
++is a “vectorized function” because it takes one or morevectors and returns another vector
+
+
+# 2 Public Sector Application: Flight Data
+An international trade organization is hosting a two-day convention in Chicago in 2019. The mayor’s tourism office has asked for some planning help based on historical data from 2016.
+
+## 2.1 Download BTS data
+• Download files for the 2016 calendar year data here: 
+• Read it into R using chi.flights <- read_csv("data.csv") and use the bind_rows command to stitch together the monthly files into a yearlong file
+
+```{r}
+setwd("~/Desktop/BTS data/") # Set the working directory
+
+listcsv <- dir(pattern = "*.csv",full.names = FALSE) # list file names
+print(listcsv) #file names are not read in correctly, month 10,11,12 are read in before month 3-9, but it will be corrected later
+
+chi.flights <- ""
+month <- list()
+for (i in 1:12){
+month[[i]] <- read.csv(listcsv[i],header=TRUE)
+chi.flights <- rbind(chi.flights, month[[i]])
+}
+
+chi.flights$MONTH <- as.numeric(chi.flights$MONTH) #change data type of month into numeric in order to sort the data set by month.
+chi.flights  <- arrange(chi.flights, MONTH) #sort data set by month
+
+lowercase.names <- tolower(colnames(chi.flights)) #to set variable names lower case
+colnames(chi.flights) <- lowercase.names
+
+tail(chi.flights, 10) #last row of data set is empty: either NA or no entry
+chi.flights <- head(chi.flights, -1)  #remove the last row, which is empty
+```
+
+## 2.2 Data Description
+1. What is the unique identifier for each flight in the dataset?
+
+We can identify each flight by their date of departure, unique airline carrier ID, tail number, a departure airport, and an arrival airport.
+
+2. R has six description methods: print, head, str, glimpse, View, summary. Apply them to chi_flights
+
+```{r}
+library(nycflights13)
+library(tidyverse)
+```
+
+print(chi.flights) #prints data set and returns invisibly
+head(chi.flights) #head(x, n) returns the first part of the data set x. n is the size of the data
+str(chi.flights) #returns the internal structure of the data 
+glimpse(chi.flights) #returns a glimpse of the data in a transposed version of print. Compared to str(), it shows as much data ss possible.
+View(chi.flights) #It opens a spreadsheet-style data viewer 
+summary(chi.flights) #returns summary of the data set and its variables 
+
+####1. Are any of the methods redundant, in the sense that you don’t learn anything from these commands that you didn’t already know from the prior methods? Make a list of the non-redundant methods
+
+```{r}
+(method.nonredundant <- list("print", "str", "summary"))
+```
+  
+####2. Of the non-redundant methods, say one thing that you learned about the data from each method.
+*print*: the first 10 observations are all
+*head*: the first 10 observations in the data set
+*str*: variable carrier is a factor variable with 11 levels
+*summary*: there are 167239 flights that are from carrier WN
+
+####3. Propose a short cheat sheet (max 2 lines per command) for the non-redundant methods
+
+
+## 2.3 Data Validation
+1. You should have 675822 rows when you downloaded data for Illinois. Load the package testthat and then test that you have this many rows using the command test_that(expect_equal(nrows(data),675822))
+
+```{r}
+#install.packages("testthat")
+library(testthat)
+test_that("expected number of rows is 675822", expect_equal(nrow(chi.flights),675822)) #When run from the command line, tests return NULL if all expectations are met, otherwise it raises an error
+```
+
+2. Because of the conditions you put into the webform, all flights should be to or from Illinois airports. Let’s check this.
+
+By filtering the data with conditions origin_state_nm == "Illinois" | dest_state_nm == "Illinois", r would delete rows that do not satisfy these contidions. If we count the number of rows of the filtered data set, it is still 675822, which means all rows satisfied the condition and no rows was deleted.
+```{r}
+(nrow(filter(chi.flights, origin_state_nm == "Illinois" | dest_state_nm == "Illinois")))
+```
+
+3. Drop flights to Midway and Ohare. How many flights are left?
+
+There are 344131 flights left.
+```{r}
+(nrow(filter(chi.flights, dest != "MDW" & dest != "ORD")))
+```
+
+4. Among flights whose origin or destination is not Midway or Ohare, what are the five most common origins? What are the five most common destinations? Where are these cities? Are these origins and destinations inside or outside Illinois? Can you explain why these are the most common origins and destinations? 
+
+From the bar chart, we can see the five most common destinations or origins are ATL, PIA, MLI, BMI, and DTW. They are located in Atlanta, Peoria, Moline, Bloomington, and Detroit. PIA and MLI are the two airports that located inside Illinois and ATL, BMI, and DTW are outside Illinois. 
+
+Becaue Chicago is a big hub city, other than MDW, PIA and MLI are the nearest airports to ORD, thus it helps to split the traffic.ATL and DTW are one of those major ports of entry into the US and they are the main layover airports when people travel between Chicago and other domestic or international destinations.
+
+```{r}
+chi.flights2 <- filter(chi.flights, dest != "MDW" & dest != "ORD" & origin != "MDW" & origin != "ORD")
+ggplot(chi.flights2, aes(x = dest, fill = dest)) +
+  geom_bar() +
+  labs(x = "destination airport")
+
+ggplot(chi.flights2, aes(x = origin, fill = origin)) +
+  geom_bar() +
+  labs(x = "origin airport")
+```
+
+5. Next, limit the sample to flights to or from Midway and Ohare. How many rows do you think the dataset should have, approximately? Find at least two websites that estimate the number of flights into each airport. Do these estimates agree with what is in the BTS dataset? Do these estimates agree with each other? If they disagree, why do you think they disagree?
+
+The data set is expected to have (675822 - 12240) = 663582 row, where 675822 is number of all flights to or from Illinois airports, which is nrow(chi.flights), and 12240 is the number of flights whose origin or destination is not Midway or Ohare, which equals to nrow(chi.flights2). The difference of them is the expected number of flights that fly to or from Midway and Ohare.
+
+1. Chicago O'Hare (881,933 total flight operations in 2014), Chicago Midway (249,252)
+https://www.usatoday.com/story/travel/flights/todayinthesky/2015/01/21/chicago-ohare-retakes-worlds-busiest-title--sort-/22125499/
+
+2. "The Federal Aviation Administration reported Thursday that total flight operations at O'Hare were down 0.9 percent to 867,635 in 2016, from 875,136 in 2015. At Midway, flight numbers were down 0.2 percent to 253,046 from 253,519 in 2015."
+http://www.chicagotribune.com/news/ct-ohare-midway-flights-down-0127-20170126-story.html
+
+```{r}
+nrow(chi.flights2)
+
+chi.flights3 <- filter(chi.flights, dest == "MDW" | dest == "ORD" | origin == "MDW" | origin == "ORD")
+nrow(chi.flights3)
+```
+
+6. Google to figure out the three highest-volume airlines at Ohare and the three highest-volume airlines out of Midway. Does this agree with what you find in the BTS data? If they disagree, why do you think they disagree?
+From the bar chart, we can tell the three highest-volume airlines are WN, UA, and AA
+
+In the case of ORD the highest volumes are United Airlines, American Airlines, and Spirit.
+https://simple.wikipedia.org/wiki/O%27Hare_International_Airport
+http://www.chicagobusiness.com/article/20151205/ISSUE01/312059993/can-you-guess-whats-the-third-biggest-airline-at-ohare
+
+For MDW Southwest is the first
+http://www.chicagotribune.com/news/ct-midway-southwest-met-20151016-story.html
+
+
+```{r}
+ggplot(chi.flights, aes(x= unique_carrier)) +
+  geom_bar(aes(fill=unique_carrier))
+```
